@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Vehicular</title>
+    <!-- Open Graph (Facebook, Discord, WhatsApp) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Proyecto control vehicular">
+  <meta property="og:description" content="BitCar, es un proyecto para control vehicular.">
+  <meta property="og:image" content="https://cdn-icons-png.flaticon.com/512/10794/10794264.png">
+  <meta property="og:url" content="https://www.bitacora.com/">
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#111831; --muted:#8aa0b6; --text:#e6eef7; --brand:#6aa6ff; --ok:#16a34a; --warn:#f59e0b; --bad:#ef4444; --card:#0f1530; --border:#26304a;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; background:linear-gradient(180deg,#0b1020 0%,#0b1428 100%); color:var(--text)}
+    a{color:var(--brand)}
+    .container{max-width:1100px; margin:0 auto; padding:24px}
+    header{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 0}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#61a0ff, #8bd3ff); box-shadow:0 6px 24px rgba(106,166,255,.35)}
+    h1{font-size:20px; margin:0}
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .grid{display:grid; gap:16px}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .muted{color:var(--muted)}
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--border); background:#192243; color:var(--text); cursor:pointer; transition:.2s transform,.2s opacity}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(135deg,#5f95ff,#6fd1ff); color:#091228; border-color:transparent}
+    .btn.danger{background:#3a0f19; border-color:#5c1625; color:#ffd7df}
+    .btn.gray{background:#121a34}
+    .toolbar{display:flex; gap:8px; flex-wrap:wrap}
+    input,select{width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#0e1530; color:#e6eef7}
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    .row{display:grid; grid-template-columns:160px 1fr; align-items:center; gap:12px}
+    .row + .row{margin-top:10px}
+    table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px}
+    th,td{padding:10px 12px; border-bottom:1px solid var(--border)}
+    th{background:#101735; text-align:left; font-weight:600}
+    tr:hover td{background:#0d1430}
+    .badge{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; border:1px solid var(--border)}
+    .badge.ok{background:#062515; color:#b7f7ce; border-color:#1d4d2a}
+    .badge.warn{background:#281a05; color:#ffe2aa; border-color:#5f3b0a}
+    .badge.bad{background:#2a0c0c; color:#ffc0c0; border-color:#5c1616}
+    .section-title{display:flex; align-items:center; justify-content:space-between; margin:6px 0 14px}
+    .section-title h2{font-size:16px; margin:0}
+    .chip{display:inline-flex; padding:4px 8px; border-radius:999px; background:#0e1738; color:var(--muted); border:1px solid var(--border); font-size:12px}
+    .hidden{display:none !important}
+    .right{display:flex; gap:8px; align-items:center}
+    .footer{margin-top:18px; color:var(--muted); font-size:12px}
+    .divider{height:1px; background:var(--border); margin:8px 0 16px}
+
+    /* ======= Responsividad adicional ======= */
+    @media (max-width: 1024px){
+      .container{padding:16px}
+    }
+    @media (max-width: 900px){
+      .grid.cols-2,.grid.cols-3{grid-template-columns:1fr}
+    }
+    @media (max-width: 760px){
+      header{flex-direction:column; align-items:flex-start}
+      .row{grid-template-columns:1fr}
+      .toolbar{width:100%}
+      .toolbar > *{flex:1}
+      /* Tablas apiladas tipo tarjeta */
+      table.responsive{display:block; border:0}
+      table.responsive thead{display:none}
+      table.responsive tbody{display:block; width:100%}
+      table.responsive tr{display:block; border:1px solid var(--border); border-radius:12px; margin:10px 0; padding:6px 0}
+      table.responsive td{display:block; border:none; padding:8px 12px}
+      table.responsive td::before{content:attr(data-th) ": "; font-weight:600; color:var(--muted); display:block; margin-bottom:4px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <h1>Control Vehicular</h1>
+        <span class="chip" id="appVersion"></span>
+      </div>
+      <div class="right">
+        <span id="whoami" class="muted"></span>
+        <button class="btn gray hidden" id="btnLogout">Salir</button>
+      </div>
+    </header>
+
+    <!-- LOGIN VIEW -->
+    <section id="viewLogin" class="card">
+      <div class="grid cols-2">
+        <div>
+          <h2>Ingreso</h2>
+          <p class="muted">Conductor o Administrador</p>
+          <div class="divider"></div>
+          <div class="row">
+            <label for="loginUser">Usuario</label>
+            <input id="loginUser" autocomplete="username" placeholder="p.ej. admin"/>
+          </div>
+          <div class="row">
+            <label for="loginPass">Contraseña</label>
+            <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••"/>
+          </div>
+          <div class="row">
+            <div></div>
+            <button class="btn primary" id="btnLogin">Entrar</button>
+          </div>
+          <p class="muted" style="margin-top:12px">Demo: <b>admin / admin123</b> · <b>conductor / conductor123</b></p>
+        </div>
+        <div>
+          <h2>Características</h2>
+          <ul class="muted">
+            <li>Selección de vehículo y vista de SOAT / Revisión Técnica</li>
+            <li>Registro de km de salida y llegada (viajes)</li>
+            <li>Módulo Admin: vehículos, conductores y asignaciones</li>
+            <li>Datos guardados en tu navegador (localStorage)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- DRIVER VIEW -->
+    <section id="viewDriver" class="hidden">
+      <div class="card">
+        <div class="section-title">
+          <h2>Panel del Conductor</h2>
+          <div class="toolbar">
+            <select id="driverVehicleSelect"></select>
+            <button class="btn" id="btnRefreshDriver">Actualizar</button>
+          </div>
+        </div>
+        <div id="vehicleInfo" class="grid cols-3"></div>
+      </div>
+
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <div class="section-title"><h2>Nuevo registro de viaje</h2></div>
+          <div class="row">
+            <label>Vehículo</label>
+            <input id="tripVehiclePlate" disabled />
+          </div>
+          <div class="row">
+            <label>Fecha y hora</label>
+            <input id="tripDateTime" type="datetime-local" />
+          </div>
+          <div class="row">
+            <label>Km salida</label>
+            <input id="kmOut" type="number" min="0" placeholder="ej. 102350" />
+          </div>
+          <div class="row">
+            <label>Km llegada</label>
+            <input id="kmIn" type="number" min="0" placeholder="ej. 102780" />
+          </div>
+          <div class="row">
+            <label>Observaciones</label>
+            <input id="tripNotes" placeholder="opcional" />
+          </div>
+          <div class="row">
+            <div></div>
+            <button class="btn primary" id="btnSaveTrip">Guardar viaje</button>
+          </div>
+          <p id="tripHint" class="muted" style="margin-top:8px"></p>
+        </div>
+        <div class="card">
+          <div class="section-title">
+            <h2>Últimos viajes</h2>
+            <div class="toolbar">
+              <button class="btn gray" id="btnExportTrips">Exportar CSV</button>
+            </div>
+          </div>
+          <div style="overflow:auto">
+            <table class="responsive">
+              <thead>
+                <tr>
+                  <th>Fecha</th><th>Conductor</th><th>Placa</th><th>Km salida</th><th>Km llegada</th><th>Recorrido</th><th>Obs.</th>
+                </tr>
+              </thead>
+              <tbody id="tripsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN VIEW -->
+    <section id="viewAdmin" class="hidden">
+      <div class="card">
+        <div class="section-title">
+          <h2>Panel de Administración</h2>
+          <div class="toolbar">
+            <button class="btn" id="btnAdminReload">Actualizar</button>
+          </div>
+        </div>
+        <div class="grid cols-2">
+          <!-- VEHICLES -->
+          <div class="card">
+            <div class="section-title">
+              <h2>Vehículos</h2>
+              <div class="toolbar">
+                <button class="btn primary" id="btnAddVehicle">Nuevo vehículo</button>
+              </div>
+            </div>
+            <div class="row">
+              <label>Buscar</label>
+              <input id="vehicleSearch" placeholder="placa, marca, modelo" />
+            </div>
+            <div style="overflow:auto; margin-top:10px">
+              <table class="responsive">
+                <thead>
+                  <tr><th>Placa</th><th>Marca</th><th>Modelo</th><th>SOAT</th><th>Rev. Téc.</th><th>Odómetro</th><th></th></tr>
+                </thead>
+                <tbody id="vehiclesTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- USERS -->
+          <div class="card">
+            <div class="section-title">
+              <h2>Usuarios</h2>
+              <div class="toolbar">
+                <button class="btn primary" id="btnAddUser">Nuevo usuario</button>
+              </div>
+            </div>
+            <div class="row">
+              <label>Buscar</label>
+              <input id="userSearch" placeholder="usuario, nombre" />
+            </div>
+            <div style="overflow:auto; margin-top:10px">
+              <table class="responsive">
+                <thead>
+                  <tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Vehículos asignados</th><th></th></tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMS -->
+      <div class="grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <div class="section-title"><h2 id="vehFormTitle">Crear / Editar Vehículo</h2></div>
+          <div class="row"><label>Placa</label><input id="vehPlate" placeholder="ABC-123"/></div>
+          <div class="row"><label>Marca</label><input id="vehBrand" placeholder="Toyota"/></div>
+          <div class="row"><label>Modelo</label><input id="vehModel" placeholder="Hilux"/></div>
+          <div class="row"><label>SOAT vence</label><input id="vehSoat" type="date"/></div>
+          <div class="row"><label>Revisión Técnica vence</label><input id="vehTech" type="date"/></div>
+          <div class="row"><label>Odómetro actual</label><input id="vehOdo" type="number" min="0"/></div>
+          <div class="row"><div></div><div class="toolbar"><button class="btn" id="btnVehClear">Limpiar</button><button class="btn primary" id="btnVehSave">Guardar</button></div></div>
+          <p class="muted" style="margin-top:8px">Sugerencia: mantén el odómetro igual o menor al del último viaje guardado.</p>
+        </div>
+        <div class="card">
+          <div class="section-title"><h2 id="userFormTitle">Crear / Editar Usuario</h2></div>
+          <div class="row"><label>Usuario (login)</label><input id="usrUsername" placeholder="chofer2"/></div>
+          <div class="row"><label>Nombre</label><input id="usrName" placeholder="Nombre y Apellido"/></div>
+          <div class="row"><label>Contraseña</label><input id="usrPassword" type="password" placeholder="••••••"/></div>
+          <div class="row"><label>Rol</label><select id="usrRole"><option value="driver">driver</option><option value="admin">admin</option></select></div>
+          <div class="row"><label>Vehículos asignados</label><select id="usrVehicles" multiple size="5"></select></div>
+          <div class="row"><div></div><div class="toolbar"><button class="btn" id="btnUserClear">Limpiar</button><button class="btn primary" id="btnUserSave">Guardar</button></div></div>
+          <p class="muted" style="margin-top:8px">Mantén usuarios con rol <b>driver</b> para los conductores.</p>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer">Hecho con HTML + JS (sin framework). Tus datos se guardan localmente en el navegador.<br>
+    Proyecto final Tesis (Gzarate)</p>
+  </div>
+
+  <script>
+  const VERSION = 'v1.0.0';
+  const el = (id) => document.getElementById(id);
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  const store = {
+    key: 'fleetData',
+    load(){
+      const raw = localStorage.getItem(this.key);
+      if(!raw){
+        const seed = this.seed();
+        localStorage.setItem(this.key, JSON.stringify(seed));
+        return seed;
+      }
+      try{ return JSON.parse(raw);}catch{ return this.seed(); }
+    },
+    save(data){ localStorage.setItem(this.key, JSON.stringify(data)); },
+    seed(){
+      const today = new Date();
+      const addDays = (n)=> new Date(today.getTime()+n*86400000).toISOString().slice(0,10);
+      return {
+        users:[
+          {id:'u1', username:'admin', name:'Administrador', password:'admin123', role:'admin', vehicleIds:[]},
+          {id:'u2', username:'conductor', name:'Gary Zarate', password:'12345', role:'driver', vehicleIds:['v1','v2']}
+        ],
+        vehicles:[
+          {id:'v1', plate:'ABC-123', brand:'Toyota', model:'Hilux', soat: addDays(120), tech: addDays(45), odometer: 102350},
+          {id:'v2', plate:'XYZ-987', brand:'Hyundai', model:'H1', soat: addDays(5), tech: addDays(200), odometer: 20300}
+        ],
+        trips:[
+          {id:'t1', dt: new Date().toISOString(), driverId:'u2', plate:'ABC-123', kmOut:102000, kmIn:102320, notes:'Entrega de Mercancia'},
+        ]
+      }
+    }
+  }
+
+  let db = store.load();
+  let session = { user:null };
+
+  // UTILIDADES
+  const fmtDate = (iso)=> new Date(iso).toLocaleString();
+  const fmtDay = (iso)=> new Date(iso).toLocaleDateString();
+  const daysLeft = (iso)=> Math.ceil((new Date(iso).setHours(0,0,0,0)- new Date().setHours(0,0,0,0))/86400000);
+  const statusBadge = (iso)=>{ const d = daysLeft(iso); if(d < 0) return `<span class=\"badge bad\">Vencido (${Math.abs(d)} días)</span>`; if(d <= 30) return `<span class=\"badge warn\">Por vencer (${d} días)</span>`; return `<span class=\"badge ok\">Vigente (${d} días)</span>`; }
+  // Etiquetas para tablas responsivas (agrega data-th a cada celda)
+  function applyResponsiveTableLabels(root=document){
+    $$('.responsive', root).forEach(tbl=>{
+      const headers = Array.from(tbl.querySelectorAll('thead th')).map(th=> th.textContent.trim());
+      tbl.querySelectorAll('tbody tr').forEach(tr=>{
+        Array.from(tr.children).forEach((td,i)=> td.setAttribute('data-th', headers[i]||''));
+      });
+    });
+  }
+
+  // NAVEGACIÓN
+  function show(view){
+    ['viewLogin','viewDriver','viewAdmin'].forEach(id=> el(id).classList.add('hidden'));
+    el(view).classList.remove('hidden');
+  }
+
+  function refreshWho(){
+    el('whoami').textContent = session.user ? `${session.user.name} — ${session.user.role}` : '';
+    el('btnLogout').classList.toggle('hidden', !session.user);
+  }
+
+  // AUTENTICACIÓN
+  el('btnLogin').addEventListener('click',()=>{
+    const u = el('loginUser').value.trim();
+    const p = el('loginPass').value;
+    const found = db.users.find(x=> x.username===u && x.password===p);
+    if(!found){ alert('Usuario o contraseña inválidos'); return; }
+    session.user = found;
+    el('loginPass').value='';
+    refreshWho();
+    if(found.role==='admin') renderAdmin(); else renderDriver();
+  });
+  el('btnLogout').addEventListener('click',()=>{ session.user=null; refreshWho(); show('viewLogin'); });
+
+  // DRIVER VIEW
+  function renderDriver(){
+    // llenar select de vehículos (asignados o todos si no hay asignación)
+    const assignedIds = session.user.vehicleIds && session.user.vehicleIds.length? session.user.vehicleIds : db.vehicles.map(v=>v.id);
+    const options = db.vehicles.filter(v=> assignedIds.includes(v.id));
+    const sel = el('driverVehicleSelect');
+    sel.innerHTML = options.map(v=>`<option value="${v.id}">${v.plate} — ${v.brand} ${v.model}</option>`).join('');
+    sel.onchange = onDriverSelectChange;
+    sel.value = options[0]?.id || '';
+    onDriverSelectChange();
+    show('viewDriver');
+  }
+
+  function onDriverSelectChange(){
+    const vehId = el('driverVehicleSelect').value;
+    const v = db.vehicles.find(x=>x.id===vehId);
+    if(!v){ el('vehicleInfo').innerHTML=''; return; }
+    el('tripVehiclePlate').value = v.plate;
+    el('tripDateTime').value = new Date().toISOString().slice(0,16);
+    el('tripHint').textContent = `Odómetro actual: ${v.odometer.toLocaleString()} km`;
+
+    const info = `
+      <div class="card">
+        <div class="section-title"><h2>Vehículo</h2></div>
+        <p><b>${v.plate}</b> — ${v.brand} ${v.model}</p>
+        <p class="muted">Odómetro: ${v.odometer.toLocaleString()} km</p>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>SOAT</h2></div>
+        <p>Vence: <b>${fmtDay(v.soat)}</b></p>
+        <p>${statusBadge(v.soat)}</p>
+      </div>
+      <div class="card">
+        <div class="section-title"><h2>Revisión Técnica</h2></div>
+        <p>Vence: <b>${fmtDay(v.tech)}</b></p>
+        <p>${statusBadge(v.tech)}</p>
+      </div>`;
+    el('vehicleInfo').innerHTML = info;
+
+    // tabla de viajes
+    const tbody = el('tripsTableBody');
+    const trips = db.trips
+      .filter(t=> t.plate===v.plate)
+      .sort((a,b)=> new Date(b.dt)-new Date(a.dt))
+      .slice(0,50);
+    tbody.innerHTML = trips.map(t=>{
+      const dist = (t.kmIn - t.kmOut);
+      const driver = db.users.find(u=>u.id===t.driverId)?.name || '—';
+      return `<tr>
+        <td>${fmtDate(t.dt)}</td><td>${driver}</td><td>${t.plate}</td>
+        <td>${t.kmOut.toLocaleString()}</td><td>${t.kmIn.toLocaleString()}</td>
+        <td>${dist.toLocaleString()} km</td><td>${t.notes||''}</td>
+      </tr>`
+    }).join('');
+    applyResponsiveTableLabels(el('viewDriver'));
+  }
+
+  el('btnRefreshDriver').addEventListener('click', renderDriver);
+
+  function validateTrip(v, kmOut, kmIn){
+    if(kmOut<0||kmIn<0) return 'Los kilómetros no pueden ser negativos';
+    if(kmIn<kmOut) return 'El km de llegada debe ser mayor o igual al de salida';
+    const lastTrip = db.trips.filter(t=>t.plate===v.plate).sort((a,b)=> new Date(b.dt)-new Date(a.dt))[0];
+    const lastEnd = lastTrip? lastTrip.kmIn : v.odometer;
+    if(kmOut < lastEnd) return `El km de salida (${kmOut}) debe ser ≥ último fin (${lastEnd})`;
+    return null;
+  }
+
+  el('btnSaveTrip').addEventListener('click', ()=>{
+    const vehId = el('driverVehicleSelect').value;
+    const v = db.vehicles.find(x=>x.id===vehId);
+    const kmOut = Number(el('kmOut').value);
+    const kmIn  = Number(el('kmIn').value);
+    const dt = new Date(el('tripDateTime').value || new Date()).toISOString();
+    const notes = el('tripNotes').value.trim();
+
+    const err = validateTrip(v, kmOut, kmIn);
+    if(err){ alert(err); return; }
+
+    const trip = { id:'t'+crypto.randomUUID(), dt, driverId:session.user.id, plate:v.plate, kmOut, kmIn, notes };
+    db.trips.push(trip);
+    // actualizar odómetro del vehículo al mayor
+    v.odometer = Math.max(v.odometer, kmIn);
+    store.save(db);
+    el('kmOut').value=''; el('kmIn').value=''; el('tripNotes').value='';
+    renderDriver();
+    alert('Viaje guardado');
+  });
+
+  el('btnExportTrips').addEventListener('click', ()=>{
+    const vehId = el('driverVehicleSelect').value;
+    const v = db.vehicles.find(x=>x.id===vehId);
+    const rows = [['Fecha','Conductor','Placa','Km salida','Km llegada','Recorrido','Obs.']];
+    db.trips.filter(t=>t.plate===v.plate).forEach(t=>{
+      const driver = db.users.find(u=>u.id===t.driverId)?.name || '';
+      rows.push([fmtDate(t.dt), driver, t.plate, t.kmOut, t.kmIn, t.kmIn - t.kmOut, t.notes||'']);
+    });
+    const csv = rows.map(r=> r.map(x=> '"'+String(x).replaceAll('"','""')+'"').join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `viajes_${v.plate}.csv`;
+    a.click();
+  });
+
+  // ADMIN VIEW
+  function renderAdmin(){
+    show('viewAdmin');
+    // tablas
+    renderVehiclesTable();
+    renderUsersTable();
+    // selects para formulario de usuarios
+    fillUserVehicleOptions();
+  }
+
+  function renderVehiclesTable(){
+    const q = el('vehicleSearch').value?.trim().toLowerCase() || '';
+    const tbody = el('vehiclesTable');
+    const filtered = db.vehicles.filter(v=> [v.plate,v.brand,v.model].join(' ').toLowerCase().includes(q));
+    tbody.innerHTML = filtered.map(v=>{ return `<tr>
+        <td>${v.plate}</td><td>${v.brand}</td><td>${v.model}</td>
+        <td>${fmtDay(v.soat)}<br>${statusBadge(v.soat)}</td>
+        <td>${fmtDay(v.tech)}<br>${statusBadge(v.tech)}</td>
+        <td>${v.odometer.toLocaleString()} km</td>
+        <td>
+          <div class=\"toolbar\">
+            <button class=\"btn\" data-edit-veh=\"${v.id}\">Editar</button>
+            <button class=\"btn danger\" data-del-veh=\"${v.id}\">Eliminar</button>
+          </div>
+        </td>
+      </tr>` }).join('');
+    applyResponsiveTableLabels(el('viewAdmin'));
+
+    // wire buttons
+    $$('[data-edit-veh]').forEach(b=> b.onclick = ()=> loadVehicleToForm(b.dataset.editVeh));
+    $$('[data-del-veh]').forEach(b=> b.onclick = ()=> deleteVehicle(b.dataset.delVeh));
+  }
+
+  function renderUsersTable(){
+    const q = el('userSearch').value?.trim().toLowerCase() || '';
+    const tbody = el('usersTable');
+    const filtered = db.users.filter(u=> [u.username,u.name,u.role].join(' ').toLowerCase().includes(q));
+    tbody.innerHTML = filtered.map(u=>{ const list = (u.vehicleIds||[]).map(id=> db.vehicles.find(v=>v.id===id)?.plate).filter(Boolean).join(', '); return `<tr>
+        <td>${u.username}</td><td>${u.name}</td><td>${u.role}</td><td>${list}</td>
+        <td>
+          <div class=\"toolbar\">
+            <button class=\"btn\" data-edit-user=\"${u.id}\">Editar</button>
+            ${u.username==='admin' ? '' : `<button class=\"btn danger\" data-del-user=\"${u.id}\">Eliminar</button>`}
+          </div>
+        </td>
+      </tr>` }).join('');
+    applyResponsiveTableLabels(el('viewAdmin'));
+
+    $$('[data-edit-user]').forEach(b=> b.onclick = ()=> loadUserToForm(b.dataset.editUser));
+    $$('[data-del-user]').forEach(b=> b.onclick = ()=> deleteUser(b.dataset.delUser));
+  }
+
+  function loadVehicleToForm(id){
+    const v = db.vehicles.find(x=>x.id===id);
+    el('vehFormTitle').textContent = `Editar Vehículo ${v.plate}`;
+    el('vehPlate').value = v.plate; el('vehBrand').value=v.brand; el('vehModel').value=v.model;
+    el('vehSoat').value = v.soat; el('vehTech').value=v.tech; el('vehOdo').value=v.odometer;
+    el('btnVehSave').dataset.editing = id;
+  }
+  function deleteVehicle(id){
+    const v = db.vehicles.find(x=>x.id===id);
+    if(!confirm(`Eliminar vehículo ${v.plate}?`)) return;
+    // quitar de asignaciones y viajes
+    db.users.forEach(u=> u.vehicleIds = (u.vehicleIds||[]).filter(vid=> vid!==id));
+    db.trips = db.trips.filter(t=> t.plate!==v.plate);
+    db.vehicles = db.vehicles.filter(x=>x.id!==id);
+    store.save(db); renderAdmin();
+  }
+
+  function fillUserVehicleOptions(){
+    const sel = el('usrVehicles');
+    sel.innerHTML = db.vehicles.map(v=> `<option value="${v.id}">${v.plate} — ${v.brand} ${v.model}</option>`).join('');
+  }
+  function loadUserToForm(id){
+    const u = db.users.find(x=>x.id===id);
+    el('userFormTitle').textContent = `Editar Usuario ${u.username}`;
+    el('usrUsername').value=u.username; el('usrName').value=u.name; el('usrPassword').value=u.password; el('usrRole').value=u.role;
+    fillUserVehicleOptions();
+    const sel = el('usrVehicles');
+    $$('#usrVehicles option').forEach(o=> o.selected = (u.vehicleIds||[]).includes(o.value));
+    el('btnUserSave').dataset.editing = id;
+  }
+  function deleteUser(id){
+    const u = db.users.find(x=>x.id===id);
+    if(u.username==='admin'){ alert('No puedes borrar al admin'); return; }
+    if(!confirm(`Eliminar usuario ${u.username}?`)) return;
+    db.users = db.users.filter(x=>x.id!==id);
+    store.save(db); renderAdmin();
+  }
+
+  // FORM EVENTS
+  el('btnAddVehicle').addEventListener('click', ()=>{
+    el('vehFormTitle').textContent = 'Crear Vehículo';
+    ['vehPlate','vehBrand','vehModel','vehSoat','vehTech','vehOdo'].forEach(id=> el(id).value='');
+    delete el('btnVehSave').dataset.editing;
+  });
+  el('btnVehClear').addEventListener('click', ()=>{
+    ['vehPlate','vehBrand','vehModel','vehSoat','vehTech','vehOdo'].forEach(id=> el(id).value='');
+    delete el('btnVehSave').dataset.editing;
+  })
+  el('btnVehSave').addEventListener('click', ()=>{
+    const data = {
+      plate: el('vehPlate').value.trim().toUpperCase(),
+      brand: el('vehBrand').value.trim(),
+      model: el('vehModel').value.trim(),
+      soat: el('vehSoat').value,
+      tech: el('vehTech').value,
+      odometer: Number(el('vehOdo').value||0)
+    };
+    if(!data.plate||!data.brand||!data.model||!data.soat||!data.tech){ alert('Completa todos los campos'); return; }
+    const editing = el('btnVehSave').dataset.editing;
+    if(editing){
+      const v = db.vehicles.find(x=>x.id===editing);
+      // si cambia placa, actualizar viajes
+      if(v.plate!==data.plate){ db.trips.forEach(t=>{ if(t.plate===v.plate) t.plate=data.plate; }); }
+      Object.assign(v, data);
+    }else{
+      if(db.vehicles.some(v=> v.plate===data.plate)) { alert('Ya existe un vehículo con esa placa'); return; }
+      db.vehicles.push({ id:'v'+crypto.randomUUID(), ...data });
+    }
+    store.save(db); renderAdmin(); alert('Vehículo guardado');
+  });
+
+  el('btnAddUser').addEventListener('click', ()=>{
+    el('userFormTitle').textContent='Crear Usuario';
+    ['usrUsername','usrName','usrPassword'].forEach(id=> el(id).value='');
+    el('usrRole').value='driver';
+    fillUserVehicleOptions();
+    $$('#usrVehicles option').forEach(o=> o.selected=false);
+    delete el('btnUserSave').dataset.editing;
+  });
+  el('btnUserClear').addEventListener('click', ()=>{
+    ['usrUsername','usrName','usrPassword'].forEach(id=> el(id).value='');
+    el('usrRole').value='driver';
+    $$('#usrVehicles option').forEach(o=> o.selected=false);
+    delete el('btnUserSave').dataset.editing;
+  });
+  el('btnUserSave').addEventListener('click', ()=>{
+    const username = el('usrUsername').value.trim();
+    const name = el('usrName').value.trim();
+    const password = el('usrPassword').value;
+    const role = el('usrRole').value;
+    const vehicleIds = $$('#usrVehicles option').filter(o=>o.selected).map(o=>o.value);
+    if(!username||!name||!password){ alert('Completa usuario, nombre y contraseña'); return; }
+    const editing = el('btnUserSave').dataset.editing;
+    if(editing){
+      const u = db.users.find(x=>x.id===editing);
+      Object.assign(u,{username,name,password,role,vehicleIds});
+    }else{
+      if(db.users.some(u=> u.username===username)){ alert('Ya existe ese usuario'); return; }
+      db.users.push({ id:'u'+crypto.randomUUID(), username, name, password, role, vehicleIds });
+    }
+    store.save(db); renderAdmin(); alert('Usuario guardado');
+  });
+
+  // SEARCH inputs live
+  el('vehicleSearch').addEventListener('input', renderVehiclesTable);
+  el('userSearch').addEventListener('input', renderUsersTable);
+  el('btnAdminReload').addEventListener('click', renderAdmin);
+
+  // INIT
+  el('appVersion').textContent = VERSION;
+  show('viewLogin');
+  refreshWho();
+  </script>
+</body>
+</html>
